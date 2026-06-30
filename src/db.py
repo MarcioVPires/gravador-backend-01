@@ -25,8 +25,14 @@ async def open_pool() -> None:
     global _pool
     if not settings.db_url:
         raise RuntimeError("SUPABASE_DB_URL não definido no ambiente")
+    # Senha vai SEPARADA (env SUPABASE_DB_PASSWORD), nunca na URL → caractere especial na
+    # senha não quebra o parse. sslmode=require: o Supabase exige SSL.
+    conn_kwargs: dict = {"sslmode": "require"}
+    if settings.db_password:
+        conn_kwargs["password"] = settings.db_password
     _pool = AsyncConnectionPool(
-        settings.db_url, min_size=1, max_size=4, open=False, configure=_configure
+        settings.db_url, min_size=1, max_size=4, open=False,
+        configure=_configure, kwargs=conn_kwargs,
     )
     await _pool.open()
     log.info("pool Postgres aberto")

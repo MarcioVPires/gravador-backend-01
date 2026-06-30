@@ -19,7 +19,11 @@ log = logging.getLogger("backp")
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    await db.open_pool()
+    # Não derruba o serviço se o DB estiver mal configurado: sobe de pé e o /health reporta down.
+    try:
+        await db.open_pool()
+    except Exception:  # noqa: BLE001
+        log.exception("falha ao abrir o pool no startup; servico segue de pe (/health reporta)")
     yield
     await db.close_pool()
 
